@@ -3,16 +3,30 @@ import json
 import time
 from datetime import datetime, timedelta
 import random
+from kafka.errors import NoBrokersAvailable
 
 # Kafka configuration
-KAFKA_BROKER = "localhost:9092"
+KAFKA_BROKER = "kafka:9092"  # Matches the docker-compose.yml configuration
 TOPIC_NAME = "voice_records"
 
-# Initialize Kafka producer
-producer = KafkaProducer(
-    bootstrap_servers=KAFKA_BROKER,
-    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-)
+
+# Initialize Kafka producer with retry logic
+def create_producer():
+    """Create a Kafka producer with retry logic."""
+    while True:
+        try:
+            producer = KafkaProducer(
+                bootstrap_servers=KAFKA_BROKER,
+                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            )
+            print("Connected to Kafka broker successfully.")
+            return producer
+        except NoBrokersAvailable:
+            print("Kafka broker not available. Retrying in 5 seconds...")
+            time.sleep(5)
+
+
+producer = create_producer()
 
 
 def generate_record():

@@ -41,7 +41,10 @@ services:
       ZOOKEEPER_SERVER: "zookeeper:32181"
       PRODUCER_INTERVAL: 100
     networks:
-      - bridge
+      bridge:
+        aliases:
+          - produser
+
   # flink-processor:
   #   image: flink
   #   depends_on:
@@ -50,8 +53,37 @@ services:
   #     KAFKA_SERVER: "kafka:9092"
   #     ZOOKEEPER_SERVER: "zookeeper:32181"
   #     PRODUCER_INTERVAL: 100
+  #     DISABLE_JEMALLOC: "true"
   #   networks:
   #     - bridge
+
+  flink-jobmanager:
+    build: ./flink_processor
+    image: flink
+    command: jobmanager
+    environment:
+      KAFKA_SERVER: "kafka:9092"
+      ZOOKEEPER_SERVER: "zookeeper:32181"
+      PRODUCER_INTERVAL: 100
+      DISABLE_JEMALLOC: "true"
+    ports:
+      - "8081:8081" # Flink Web UI
+    networks:
+      - bridge
+
+  flink-taskmanager:
+    build: ./flink_processor
+    image: flink
+    command: taskmanager
+    environment:
+      KAFKA_SERVER: "kafka:9092"
+      ZOOKEEPER_SERVER: "zookeeper:32181"
+      PRODUCER_INTERVAL: 100
+      DISABLE_JEMALLOC: "true"
+    depends_on:
+      - flink-jobmanager
+    networks:
+      - bridge
   # postgres:
   #   build:
   #     context: ./postgres
